@@ -23,9 +23,27 @@ def open_file():
         data.append([ int(x) for x in row ])
     return data
 
+def open_test_file():
+    input = pd.read_csv('test-public.csv')
+    return input
 
+def genereate_test_edge_list(data):
+    node_list_1 = []
+    node_list_2 = []
+    for i,j in data.iterrows():
+        node_list_1.append(j[1])
+        node_list_2.append(j[2])
 
-def second_processing(content):
+    test_edge_list = pd.DataFrame({'node_1': node_list_1, 'node_2': node_list_2})
+    print(test_edge_list.head())
+
+    edge_tuples = []
+    for index, row in test_edge_list.iterrows():
+        edge_tuples.append((row['node_1'],row['node_2']))
+
+    return edge_tuples
+
+def generate_training_edge_list(content):
     node_list_1 = []
     node_list_2 = []
     for row in content:
@@ -36,9 +54,9 @@ def second_processing(content):
                 node_list_1.append(row[0])
                 node_list_2.append(row[connection])
 
-    df = pd.DataFrame({'node_1': node_list_1, 'node_2': node_list_2})
+    training_edge_list = pd.DataFrame({'node_1': node_list_1, 'node_2': node_list_2})
 
-    return df
+    return training_edge_list
 
 def create_graph(edge_list):
     graph = nx.from_pandas_edgelist(edge_list, "node_1", "node_2", create_using=nx.Graph())
@@ -55,21 +73,31 @@ def trim_graph(graph):
     graph_train.remove_edges_from(edge_subset)
     return edge_subset, graph_train
 
-def jaccard_coefficient(edge_subset, graph):
-    predictions_preferential = nx.jaccard_coefficient(graph, edge_subset)
-    print("predictions made!")
-    scores = {}
-    for u,v,p in predictions_preferential:
-        scores[(u,v)] = p
-        print("The score for edge " + str(u) + "," + str(v) + " is " + str(p))
+def jaccard_coefficient(graph, test_edge_list):
+    predictions_preferential = nx.jaccard_coefficient(graph, test_edge_list)
 
+    scores = {}
+    count = 0
+
+    for u in predictions_preferential:
+
+
+        #print(u)
+        count += 1
+
+        #scores[(u,v)] = p
+    print(count)
 
     print("scores/labels calculated")
+    return scores
 
 
 if __name__ == "__main__":
-    data = open_file()
-    edge_list = second_processing(data)
-    graph = create_graph(edge_list)
-    edge_subset, graph_train = trim_graph(graph)
-    jaccard_coefficient(edge_subset, graph_train)
+    test_data = open_test_file()
+    test_edge_list = genereate_test_edge_list(test_data)
+
+    training_data = open_file()
+    training_edge_list = generate_training_edge_list(training_data)
+    graph = create_graph(training_edge_list)
+
+    scores = jaccard_coefficient(graph, test_edge_list)
